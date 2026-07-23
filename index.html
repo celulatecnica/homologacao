@@ -86,41 +86,47 @@ async function carregarCanais() {
     const mapaServicos = {};
 
     /*
-        Estrutura esperada:
+        Estrutura esperada do CSV:
+
         Canal;SI;CA_Service
 
         Exemplo:
         A&E HD ;5168;59,161,442,467,611
     */
-    for (let i = 1; i < linh*s.length; i++) {
-        const par*es = linhas[i].split(";");
+    for (let i = 1; i < linhas.length; i++) {
+        const partes = linhas[i].split(";");
 
-      * if (partes.length < 3) {
-        *   continue;
+        if (partes.length < 3) {
+            continue;
         }
 
-        co*st canal = partes[0].trim();
-     *  const caService = partes.slice(2*.join(";").trim();
+        const canal = partes[0].trim();
 
-        const *ervicos = caService
-            .s*lit(",")
-            .map(servico *> servico.trim())
-            .fil*er(servico => servico !== "");
+        /*
+            Caso o campo CA_Service tenha algum ; inesperado,
+            junta tudo a partir da terceira coluna.
+        */
+        const caService = partes*slice(2).join(";").trim();
 
-  *     servicos.forEach(servico => {*            if (!mapaServicos[servico]) {
-                mapaServico*[servico] = [];
-            }
+      * const servicos = caService
+      *     .split(",")
+            .map(*ervico => servico.trim())
+        *   .filter(servico => servico !== *");
 
-   *        mapaServicos[servico].push*canal);
+        servicos.forEach(serv*co => {
+            if (!mapaServi*os[servico]) {
+                map*Servicos[servico] = [];
+          * }
+
+            mapaServicos[servico].push(canal);
         });
     }
-
-    ret*rn mapaServicos;
+*    return mapaServicos;
 }
 
-async function*analisar() {
-    const campoComando = document.getElementById("comando");
-    const campoResultado = document.getElementById("resultado");
+async *unction analisar() {
+    const cam*oComando = document.getElementById*"comando");
+    const campoResulta*o = document.getElementById("resultado");
 
     campoResultado.value = "Analisando...";
 
@@ -134,13 +140,6 @@ async function*analisar() {
         return;
     }
 
-    const posAA = texto.indexOf("AA");
-
-    if (posAA === -1) {
-        campoResultado.value = "Nenhuma sequência AA foi encontrada.";
-        return;
-    }
-
     let mapaServicos = {};
 
     try {
@@ -151,60 +150,41 @@ async function*analisar() {
     }
 
     /*
-        Localiza a primeira sequência AA.
-        Volta 13 caracteres para montar o primeiro bloco.
+        Procura blocos no formato:
+
+        A00A100000000A
+
+        Estrutura:
+        A + 4 caracteres hexadecimais + 8 caracteres + A
 
         Exemplo:
         A00A100000000A
 
-        Depois avança de 14 em 14 caracteres.
+        O valor hexadecimal usado será:
+        00A1
+
+        Convertendo:
+        00A1 hexadecimal = 161 decimal
     */
-    let posicao = posAA - 13;
+    const regex = /A([0-9A-F]{4}*[0-9A-F]{8}A/g;
 
-    if (posicao < 0) {
-        campoResultado.value = "Não existem 13 caracteres antes da primeira sequência AA.";
-        return;
-    }
+    let resultado* = [];
+    let encontrado;
 
-    let resultados = [];
+    wh*le ((encontrado = regex.exec(texto*) !== null) {
+        const bloco * encontrado[0];
+        const hexa*ecimal = encontrado[1];
 
-    while (posicao + 14 <= texto.length) {
-        const bloco = texto.substring(posicao, posicao + 14);
+        c*nst decimal = parseInt(hexadecimal* 16);
+        const decimalTexto =*String(decimal);
 
-        if (bloco.length !== 14) {
-            break;
-        }
+        let nome*anal = "Canal não encontrado";
 
-        if (!bloco.endsWith("A")) {
-            break;
-        }
-
-        /*
-            Pega os 4 primeiros caracteres após o A.
-            Exemplo:
-            A00A100000000A
-             00A1
-        */
-        const hexadecimal = bloco.substring(1, 5);
-
-        /*
-            Converte hexadecimal para decimal.
-            Exemplo:
-            00A1 = 161
-        */
-        const decimal = parseInt(hexadecimal, 16);
-
-        const decimalTexto = String(decimal);
-
-        let nomeCanal = "Canal não encontrado";
-
-        if (mapaServicos[decimalTexto]) {
-            nomeCanal = mapaServicos[decimalTexto].join(" / ");
-        }
+  *     if (mapaServicos[decimalTexto]) {
+            nomeCanal = mapaSe*vicos[decimalTexto].join(" / ");
+ *      }
 
         resultados.push(bloco + " = " + decimal + " - " + nomeCanal);
-
-        posicao += 14;
     }
 
     if (resultados.length === 0) {
