@@ -70,7 +70,7 @@
 
 <script>
 async function carregarCanais() {
-    const resposta = await fetch("CA_Services.csv");
+    const resposta = await fetch("arquivos/CA_Services.csv");
 
     if (!resposta.ok) {
         throw new Error("Não foi possível carregar o arquivo CA_Services.csv");
